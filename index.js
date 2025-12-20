@@ -169,6 +169,23 @@ async function run() {
         res.send(result);
     });
 
+    app.patch('/issues/:id', async (req, res) => {
+        const id = req.params.id;
+        const item = req.body;
+        const filter = { _id: new ObjectId(id) };
+        const updatedDoc = {
+            $set: {
+                title: item.title,
+                description: item.description,
+                category: item.category,
+                location: item.location,
+                ...(item.photo && { photo: item.photo }) 
+            }
+        };
+        const result = await issuesCollection.updateOne(filter, updatedDoc);
+        res.send(result);
+    });
+
     app.get('/timelines/:issueId', async (req, res) => {
         const issueId = req.params.issueId;
         const query = { issueId: new ObjectId(issueId) };
