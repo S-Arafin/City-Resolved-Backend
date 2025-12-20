@@ -68,6 +68,19 @@ async function run() {
         res.send(result);
     });
 
+    app.patch('/users/status/:id', async (req, res) => {
+        const id = req.params.id;
+        const { isBlocked } = req.body;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+            $set: { isBlocked: isBlocked }
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+    });
+
+   
+
     app.post("/issues", async (req, res) => {
       const issue = req.body;
       const userEmail = issue.reportedBy.email;
