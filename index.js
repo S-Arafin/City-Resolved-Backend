@@ -108,6 +108,53 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/issues", async (req, res) => {
+      const { search, status, category } = req.query;
+      let query = {};
+
+      if (search) {
+        query.title = { $regex: search, $options: 'i' };
+      }
+      if (status) {
+        query.status = status;
+      }
+      if (category) {
+        query.category = category;
+      }
+
+      const result = await issuesCollection.find(query)
+        .sort({ priority: 1, createdAt: -1 })
+        .toArray();
+      
+      res.send(result);
+    });
+
+    app.patch('/issues/upvote/:id', async (req, res) => {
+        const id = req.params.id;
+        const { userEmail } = req.body;
+
+        const filter = { _id: new ObjectId(id) };
+        const issue = await issuesCollection.findOne(filter);
+
+        if (!issue) return res.status(404).send({ message: "Issue not found" });
+
+        if (issue.reportedBy.email === userEmail) {
+            return res.send({ message: "You cannot upvote your own issue." });
+        }
+
+        if (issue.upvotedBy?.includes(userEmail)) {
+            return res.send({ message: "You have already upvoted this issue." });
+        }
+
+        const updateDoc = {
+            $inc: { upvotes: 1 },
+            $push: { upvotedBy: userEmail }
+        };
+
+        const result = await issuesCollection.updateOne(filter, updateDoc);
+        res.send(result);
+    });
+
     app.get("/my-issues/:email", async (req, res) => {
       const email = req.params.email;
       const result = await issuesCollection
@@ -162,6 +209,7 @@ async function run() {
 
       res.send(result);
     });
+
     app.get("/admin-stats", async (req, res) => {
       const totalUsers = await usersCollection.estimatedDocumentCount();
       const totalIssues = await issuesCollection.estimatedDocumentCount();
