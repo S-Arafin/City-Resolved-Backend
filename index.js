@@ -321,6 +321,44 @@ async function run() {
       });
     });
 
+    // adding user through admin withfirebase admin sdk
+    app.post('/users/add-staff', async (req, res) => {
+        const { name, email, password } = req.body;
+
+        try {
+            
+            const userRecord = await admin.auth().createUser({
+                email: email,
+                password: password,
+                displayName: name,
+                photoURL: 'https://i.pravatar.cc/150?img=12', // Default staff image
+                emailVerified: true
+            });
+
+            const newStaff = {
+                name: name,
+                email: email,
+                photo: 'https://i.pravatar.cc/150?img=12',
+                role: 'staff',
+                isVerified: true,
+                isBlocked: false,
+                firebaseUid: userRecord.uid,
+                createdAt: new Date()
+            };
+
+            const result = await usersCollection.insertOne(newStaff);
+            
+            res.send({ success: true, result });
+
+        } catch (error) {
+            console.error("Error creating staff:", error);
+            res.status(500).send({ 
+                success: false, 
+                message: error.message 
+            });
+        }
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
