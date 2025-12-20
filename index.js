@@ -331,14 +331,14 @@ async function run() {
                 email: email,
                 password: password,
                 displayName: name,
-                photoURL: 'https://i.pravatar.cc/150?img=12', // Default staff image
+                photoURL: req.body.photo,
                 emailVerified: true
             });
 
             const newStaff = {
                 name: name,
                 email: email,
-                photo: 'https://i.pravatar.cc/150?img=12',
+                photo: req.body.photo,
                 role: 'staff',
                 isVerified: true,
                 isBlocked: false,
@@ -357,6 +357,19 @@ async function run() {
                 message: error.message 
             });
         }
+    });
+    app.patch('/users/info/:id', async (req, res) => {
+        const id = req.params.id;
+        const { name, email } = req.body;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+            $set: {
+                name: name,
+                email: email
+            }
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
     });
 
     await client.db("admin").command({ ping: 1 });
