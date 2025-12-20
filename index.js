@@ -6,6 +6,14 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.PORT || 3000;
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./city-resolved-firebase-adminsdk-fbsvc-1083de362d.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
 
 app.use(cors());
 app.use(express.json());
@@ -79,7 +87,12 @@ async function run() {
         res.send(result);
     });
 
-   
+    app.delete('/users/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await usersCollection.deleteOne(query);
+        res.send(result);
+    });
 
     app.post("/issues", async (req, res) => {
       const issue = req.body;
