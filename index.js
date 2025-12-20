@@ -372,6 +372,59 @@ async function run() {
         res.send(result);
     });
 
+    app.patch('/issues/:id/assign', async (req, res) => {
+        const id = req.params.id;
+        const { staffId, staffName, staffEmail, staffPhoto } = req.body;
+        
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+            $set: {
+                assignedStaff: {
+                    staffId,
+                    name: staffName,
+                    email: staffEmail,
+                    photo: staffPhoto
+                },
+                status: 'in-progress'
+            }
+        };
+        
+        const result = await issuesCollection.updateOne(filter, updateDoc);
+
+        const timelineEntry = {
+            issueId: new ObjectId(id),
+            status: 'in-progress',
+            message: `Issue assigned to Staff: ${staffName}`,
+            updatedBy: 'Admin',
+            role: 'admin',
+            date: new Date()
+        };
+        await timelinesCollection.insertOne(timelineEntry);
+
+        res.send(result);
+    });
+
+    app.patch('/issues/:id/reject', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+            $set: { status: 'rejected' }
+        };
+        const result = await issuesCollection.updateOne(filter, updateDoc);
+
+        const timelineEntry = {
+            issueId: new ObjectId(id),
+            status: 'rejected',
+            message: 'Issue rejected by Admin',
+            updatedBy: 'Admin',
+            role: 'admin',
+            date: new Date()
+        };
+        await timelinesCollection.insertOne(timelineEntry);
+
+        res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
