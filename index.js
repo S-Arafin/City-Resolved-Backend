@@ -58,6 +58,16 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/users', async (req, res) => {
+        const role = req.query.role;
+        let query = {};
+        if (role) {
+            query.role = role;
+        }
+        const result = await usersCollection.find(query).toArray();
+        res.send(result);
+    });
+
     app.post("/issues", async (req, res) => {
       const issue = req.body;
       const userEmail = issue.reportedBy.email;
