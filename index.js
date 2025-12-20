@@ -428,6 +428,45 @@ async function run() {
         const result = await paymentsCollection.find().sort({ date: -1 }).toArray();
         res.send(result);
     });
+    app.get('/staff-stats/:email', async (req, res) => {
+        const email = req.params.email;
+        const query = { 'assignedStaff.email': email };
+        
+        const totalAssigned = await issuesCollection.countDocuments(query);
+        const totalResolved = await issuesCollection.countDocuments({ ...query, status: 'resolved' });
+        const totalClosed = await issuesCollection.countDocuments({ ...query, status: 'closed' });
+
+        res.send({ totalAssigned, totalResolved, totalClosed });
+    });
+
+    app.get('/issues/assigned/:email', async (req, res) => {
+        const email = req.params.email;
+        const result = await issuesCollection.find({ 'assignedStaff.email': email })
+            .sort({ priority: 1, createdAt: -1 })
+            .toArray();
+        res.send(result);
+    });
+
+    app.patch('/issues/status/:id', async (req, res) => {
+        const id = req.params.id;
+        const { status, userEmail, userName } = req.body;
+        
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = { $set: { status: status } };
+        const result = await issuesCollection.updateOne(filter, updateDoc);
+
+        const timelineEntry = {
+            issueId: new ObjectId(id),
+            status: status,
+            message: `Status changed to ${status}`,
+            updatedBy: userName,
+            role: 'staff',
+            date: new Date()
+        };
+        await timelinesCollection.insertOne(timelineEntry);
+
+        res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
