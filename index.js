@@ -169,6 +169,13 @@ async function run() {
         res.send(result);
     });
 
+    app.get('/timelines/:issueId', async (req, res) => {
+        const issueId = req.params.issueId;
+        const query = { issueId: new ObjectId(issueId) };
+        const result = await timelinesCollection.find(query).sort({ date: -1 }).toArray();
+        res.send(result);
+    });
+
     app.get("/my-issues/:email", async (req, res) => {
       const email = req.params.email;
       const result = await issuesCollection
