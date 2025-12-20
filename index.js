@@ -424,6 +424,10 @@ async function run() {
 
         res.send(result);
     });
+    app.get('/payments', async (req, res) => {
+        const result = await paymentsCollection.find().sort({ date: -1 }).toArray();
+        res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
