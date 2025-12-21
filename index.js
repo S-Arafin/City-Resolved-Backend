@@ -36,6 +36,21 @@ async function run() {
     const timelinesCollection = database.collection("timelines");
     const paymentsCollection = database.collection("payments");
 
+    // MIDDLEWARE: Verify Firebase ID Token
+    const verifyToken = async (req, res, next) => {
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'forbidden access' });
+      }
+      const token = req.headers.authorization.split(' ')[1];
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        req.decoded = decodedToken;
+        next();
+      } catch (error) {
+        return res.status(401).send({ message: 'unauthorized access' });
+      }
+    };
+
     app.post("/users", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
@@ -59,14 +74,14 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/users/:email", async (req, res) => {
+    app.get("/users/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await usersCollection.findOne(query);
       res.send(result);
     });
 
-    app.get('/users', async (req, res) => {
+    app.get('/users', verifyToken, async (req, res) => {
         const role = req.query.role;
         let query = {};
         if (role) {
@@ -76,7 +91,7 @@ async function run() {
         res.send(result);
     });
 
-    app.patch('/users/status/:id', async (req, res) => {
+    app.patch('/users/status/:id', verifyToken, async (req, res) => {
         const id = req.params.id;
         const { isBlocked } = req.body;
         const filter = { _id: new ObjectId(id) };
@@ -87,14 +102,14 @@ async function run() {
         res.send(result);
     });
 
-    app.delete('/users/:id', async (req, res) => {
+    app.delete('/users/:id', verifyToken, async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
         const result = await usersCollection.deleteOne(query);
         res.send(result);
     });
 
-    app.post("/issues", async (req, res) => {
+    app.post("/issues", verifyToken, async (req, res) => {
       const issue = req.body;
       const userEmail = issue.reportedBy.email;
 
@@ -165,7 +180,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch('/issues/upvote/:id', async (req, res) => {
+    app.patch('/issues/upvote/:id', verifyToken, async (req, res) => {
         const id = req.params.id;
         const { userEmail } = req.body;
 
@@ -198,14 +213,14 @@ async function run() {
         res.send(result);
     });
 
-    app.delete('/issues/:id', async (req, res) => {
+    app.delete('/issues/:id', verifyToken, async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
         const result = await issuesCollection.deleteOne(query);
         res.send(result);
     });
 
-    app.patch('/issues/:id', async (req, res) => {
+    app.patch('/issues/:id', verifyToken, async (req, res) => {
         const id = req.params.id;
         const item = req.body;
         const filter = { _id: new ObjectId(id) };
@@ -229,7 +244,7 @@ async function run() {
         res.send(result);
     });
 
-    app.get("/my-issues/:email", async (req, res) => {
+    app.get("/my-issues/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const result = await issuesCollection
         .find({ "reportedBy.email": email })
@@ -238,7 +253,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/create-payment-intent", async (req, res) => {
+    app.post("/create-payment-intent", verifyToken, async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
 
@@ -253,7 +268,7 @@ async function run() {
       });
     });
 
-    app.post("/payments", async (req, res) => {
+    app.post("/payments", verifyToken, async (req, res) => {
       const payment = req.body;
       const result = await paymentsCollection.insertOne(payment);
 
@@ -284,7 +299,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/admin-stats", async (req, res) => {
+    app.get("/admin-stats", verifyToken, async (req, res) => {
       const totalUsers = await usersCollection.estimatedDocumentCount();
       const totalIssues = await issuesCollection.estimatedDocumentCount();
       const totalPayments = await paymentsCollection.estimatedDocumentCount();
@@ -322,7 +337,7 @@ async function run() {
     });
 
     // adding user through admin withfirebase admin sdk
-    app.post('/users/add-staff', async (req, res) => {
+    app.post('/users/add-staff', verifyToken, async (req, res) => {
         const { name, email, password } = req.body;
 
         try {
@@ -358,7 +373,7 @@ async function run() {
             });
         }
     });
-    app.patch('/users/info/:id', async (req, res) => {
+    app.patch('/users/info/:id', verifyToken, async (req, res) => {
         const id = req.params.id;
         const { name, email } = req.body;
         const filter = { _id: new ObjectId(id) };
@@ -372,7 +387,7 @@ async function run() {
         res.send(result);
     });
 
-    app.patch('/issues/:id/assign', async (req, res) => {
+    app.patch('/issues/:id/assign', verifyToken, async (req, res) => {
         const id = req.params.id;
         const { staffId, staffName, staffEmail, staffPhoto } = req.body;
         
@@ -404,7 +419,7 @@ async function run() {
         res.send(result);
     });
 
-    app.patch('/issues/:id/reject', async (req, res) => {
+    app.patch('/issues/:id/reject', verifyToken, async (req, res) => {
         const id = req.params.id;
         const filter = { _id: new ObjectId(id) };
         const updateDoc = {
@@ -424,11 +439,11 @@ async function run() {
 
         res.send(result);
     });
-    app.get('/payments', async (req, res) => {
+    app.get('/payments', verifyToken, async (req, res) => {
         const result = await paymentsCollection.find().sort({ date: -1 }).toArray();
         res.send(result);
     });
-    app.get('/staff-stats/:email', async (req, res) => {
+    app.get('/staff-stats/:email', verifyToken, async (req, res) => {
         const email = req.params.email;
         const query = { 'assignedStaff.email': email };
         
@@ -439,7 +454,7 @@ async function run() {
         res.send({ totalAssigned, totalResolved, totalClosed });
     });
 
-    app.get('/issues/assigned/:email', async (req, res) => {
+    app.get('/issues/assigned/:email', verifyToken, async (req, res) => {
         const email = req.params.email;
         const result = await issuesCollection.find({ 'assignedStaff.email': email })
             .sort({ priority: 1, createdAt: -1 })
@@ -447,7 +462,7 @@ async function run() {
         res.send(result);
     });
 
-    app.patch('/issues/status/:id', async (req, res) => {
+    app.patch('/issues/status/:id', verifyToken, async (req, res) => {
         const id = req.params.id;
         const { status, userEmail, userName } = req.body;
         
