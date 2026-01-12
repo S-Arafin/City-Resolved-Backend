@@ -8,9 +8,6 @@ const app = express();
 const port = process.env.PORT || 3000;
 const admin = require("firebase-admin");
 
-// const serviceAccount = require("./city-resolved-firebase-adminsdk-fbsvc-1083de362d.json");
-
-// const serviceAccount = require("./firebase-admin-key.json");
 
 const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
 const serviceAccount = JSON.parse(decoded);
@@ -165,6 +162,12 @@ async function run() {
     });
 
     app.get("/issues", async (req, res) => {
+      // 1. Extract Pagination Parameters (Default to Page 1, 8 items per page)
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 12; 
+      const skip = (page - 1) * limit;
+
+      // 2. Build Query (Same as before)
       const { search, status, category } = req.query;
       let query = {};
 
@@ -178,11 +181,21 @@ async function run() {
         query.category = category;
       }
 
+      // 3. Get Total Count (Crucial for calculating total pages on frontend)
+      const total = await issuesCollection.countDocuments(query);
+
+      // 4. Fetch Paginated Data
       const result = await issuesCollection.find(query)
         .sort({ priority: 1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
         .toArray();
       
-      res.send(result);
+      // 5. Send Response (Includes data AND total count)
+      res.send({
+          issues: result,
+          total
+      });
     });
 
     app.patch('/issues/upvote/:id', verifyToken, async (req, res) => {
@@ -304,7 +317,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/admin-stats", verifyToken, async (req, res) => {
+    app.get("/admin-stats", async (req, res) => {
       const totalUsers = await usersCollection.estimatedDocumentCount();
       const totalIssues = await issuesCollection.estimatedDocumentCount();
       const totalPayments = await paymentsCollection.estimatedDocumentCount();
