@@ -1,15 +1,5 @@
 <div align="center">
 
-<img src="[https://capsule-render.vercel.app/api?type=waving&color=0f172a&height=200&section=header&text=CityResolved%20Backend&fontSize=80&fontColor=38bdf8&animation=fadeIn&fontAlignY=35](https://www.google.com/search?q=https://capsule-render.vercel.app/api%3Ftype%3Dwaving%26color%3D0f172a%26height%3D200%26section%3Dheader%26text%3DCityResolved%2520Backend%26fontSize%3D80%26fontColor%3D38bdf8%26animation%3DfadeIn%26fontAlignY%3D35)" width="100%" />
-
-<p align="center">
-<a href="[https://city-resolved.web.app/](https://city-resolved.web.app/)">
-<img src="[https://img.shields.io/badge/Live_Site-FF5722?style=for-the-badge&logo=firebase&logoColor=white](https://www.google.com/search?q=https://img.shields.io/badge/Live_Site-FF5722%3Fstyle%3Dfor-the-badge%26logo%3Dfirebase%26logoColor%3Dwhite)" alt="Live Site" />
-</a>
-<a href="[https://github.com/S-Arafin/City-Resolved](https://github.com/S-Arafin/City-Resolved)">
-<img src="[https://img.shields.io/badge/Client_Repo-2ea44f?style=for-the-badge&logo=github&logoColor=white](https://www.google.com/search?q=https://img.shields.io/badge/Client_Repo-2ea44f%3Fstyle%3Dfor-the-badge%26logo%3Dgithub%26logoColor%3Dwhite)" alt="Client Repo" />
-</a>
-</p>
 
 <p align="center">
 <b>Secure REST API Architecture powering the CityResolved platform.</b>
