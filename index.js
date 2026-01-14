@@ -83,6 +83,21 @@ async function run() {
       res.send(result);
     });
 
+    // Update User Profile (Name & Photo)
+    app.patch('/users/profile/:email', verifyToken, async (req, res) => {
+        const email = req.params.email;
+        const { name, photo } = req.body;
+        const filter = { email: email };
+        const updateDoc = {
+            $set: {
+                name: name,
+                photo: photo
+            }
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+    });
+
     app.get('/users', verifyToken, async (req, res) => {
         const role = req.query.role;
         let query = {};
@@ -103,6 +118,7 @@ async function run() {
         const result = await usersCollection.updateOne(filter, updateDoc);
         res.send(result);
     });
+
 
     app.delete('/users/:id', verifyToken, async (req, res) => {
         const id = req.params.id;
