@@ -1,5 +1,4 @@
-
-name: Node.js CI
+name: City Resolved Backend CI/CD
 
 on:
   push:
@@ -8,22 +7,77 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  # -------------------------------------------------------------
+  # STAGE 1: Static Analysis (Linting & Formatting)
+  # -------------------------------------------------------------
+  quality-check:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x # Using the latest stable version
+          cache: 'npm'
+          
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Check Formatting
+        run: npm run format --if-present
+        
+      - name: Run Linter
+        run: npm run lint --if-present
+
+  # -------------------------------------------------------------
+  # STAGE 2: Automated Testing (Injecting your Secrets)
+  # -------------------------------------------------------------
+  test:
+    needs: quality-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+          
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Run Test Suite
+        env:
+          # Injecting the repository secrets you configured
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          FB_SERVICE_KEY: ${{ secrets.FB_SERVICE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NODE_ENV: test
+        run: npm test
+
+  # -------------------------------------------------------------
+  # STAGE 3: Build & Prepare for Deployment
+  # -------------------------------------------------------------
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+          
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Build Application
+        run: npm run build --if-present
