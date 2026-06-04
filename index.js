@@ -8,6 +8,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 const admin = require("firebase-admin");
 
+const { InferenceClient } = require("@huggingface/inference");
+const hf = new InferenceClient(process.env.HF_TOKEN);
+
 
 const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
 const serviceAccount = JSON.parse(decoded);
@@ -29,7 +32,32 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+// Utility: Analyze image using Hugging Face
+async function analyzeIssueImage(imageUrl) {
+    try {
+        // Fetch the image from the ImgBB URL
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+            throw new Error(`Image fetch failed: ${response.status}`);
+        }
+        
+        // Convert the response to a Blob for the HF client
+        const imageBlob = await response.blob();
+        
+        // Query the model
+        const result = await hf.imageClassification({
+            data: imageBlob,
+            model: "google/vit-base-patch16-224" 
+        });
 
+        // Extract and return the top 3 highest-confidence labels
+        return result.slice(0, 3).map(item => item.label);
+    } catch (error) {
+        console.error("Hugging Face API Error:", error.message);
+        // Fault tolerance: Return an empty array so the main request does not fail
+        return [];
+    }
+}
 async function run() {
   try {
     const database = client.db("city-resolved");
